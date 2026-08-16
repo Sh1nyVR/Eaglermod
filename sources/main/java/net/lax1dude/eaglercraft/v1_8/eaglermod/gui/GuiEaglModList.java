@@ -27,6 +27,7 @@ public class GuiEaglModList extends GuiScreen {
 		buttonList.add(new GuiButton(2, width / 2 - 102, height - 28, 76, 20, "Mod Builder"));
 		buttonList.add(new GuiButton(3, width / 2 - 24, height - 28, 62, 20, "Toggle"));
 		buttonList.add(new GuiButton(4, width / 2 + 40, height - 28, 62, 20, "Export"));
+		buttonList.add(new GuiButton(6, width / 2 + 26, height - 54, 76, 20, "Reset"));
 		buttonList.add(new GuiButton(5, width / 2 + 104, height - 54, 76, 20, "Test"));
 		updateButtons();
 	}
@@ -35,7 +36,7 @@ public class GuiEaglModList extends GuiScreen {
 		boolean has = selected >= 0 && selected < EaglModRegistry.getInstalled().size();
 		for(int i = 0; i < buttonList.size(); ++i) {
 			GuiButton b = (GuiButton)buttonList.get(i);
-			if(b.id == 3 || b.id == 4 || b.id == 5) b.enabled = has;
+			if(b.id == 3 || b.id == 4 || b.id == 5 || b.id == 6) b.enabled = has;
 		}
 	}
 
@@ -90,6 +91,16 @@ public class GuiEaglModList extends GuiScreen {
 					EaglModRuntime.reload();
 					EaglModRuntime.fireMod(test.manifest.id, "test");
 					status = "Fired TEST for " + test.manifest.name;
+				}
+				break;
+			case 6:
+				EaglModPackage reset = EaglModRegistry.getInstalled().get(selected);
+				if(!reset.manifest.enabled) {
+					status = "Enable " + reset.manifest.name + " before resetting";
+				}else {
+					EaglModRuntime.reload();
+					EaglModRuntime.fireMod(reset.manifest.id, "reset");
+					status = "Fired RESET for " + reset.manifest.name;
 				}
 				break;
 			default:
