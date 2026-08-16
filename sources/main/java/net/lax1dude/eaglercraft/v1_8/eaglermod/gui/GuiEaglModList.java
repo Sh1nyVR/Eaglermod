@@ -90,7 +90,7 @@ public class GuiEaglModList extends GuiScreen {
 		updateButtons();
 	}
 
-	protected void mouseClicked(int mx, int my, int button) throws IOException {
+	protected void mouseClicked(int mx, int my, int button) {
 		super.mouseClicked(mx, my, button);
 		if(button != 0) return;
 		List<EaglModPackage> mods = EaglModRegistry.getInstalled();
