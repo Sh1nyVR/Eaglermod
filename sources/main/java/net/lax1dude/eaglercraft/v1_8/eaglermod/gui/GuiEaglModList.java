@@ -27,6 +27,7 @@ public class GuiEaglModList extends GuiScreen {
 		buttonList.add(new GuiButton(2, width / 2 - 102, height - 28, 76, 20, "Mod Builder"));
 		buttonList.add(new GuiButton(3, width / 2 - 24, height - 28, 62, 20, "Toggle"));
 		buttonList.add(new GuiButton(4, width / 2 + 40, height - 28, 62, 20, "Export"));
+		buttonList.add(new GuiButton(5, width / 2 + 104, height - 54, 76, 20, "Test"));
 		updateButtons();
 	}
 
@@ -34,7 +35,7 @@ public class GuiEaglModList extends GuiScreen {
 		boolean has = selected >= 0 && selected < EaglModRegistry.getInstalled().size();
 		for(int i = 0; i < buttonList.size(); ++i) {
 			GuiButton b = (GuiButton)buttonList.get(i);
-			if(b.id == 3 || b.id == 4) b.enabled = has;
+			if(b.id == 3 || b.id == 4 || b.id == 5) b.enabled = has;
 		}
 	}
 
@@ -81,6 +82,16 @@ public class GuiEaglModList extends GuiScreen {
 				EaglModRegistry.export(EaglModRegistry.getInstalled().get(selected));
 				status = "Exported mod";
 				break;
+			case 5:
+				EaglModPackage test = EaglModRegistry.getInstalled().get(selected);
+				if(!test.manifest.enabled) {
+					status = "Enable " + test.manifest.name + " before testing";
+				}else {
+					EaglModRuntime.reload();
+					EaglModRuntime.fireMod(test.manifest.id, "test");
+					status = "Fired TEST for " + test.manifest.name;
+				}
+				break;
 			default:
 				break;
 			}
@@ -97,7 +108,7 @@ public class GuiEaglModList extends GuiScreen {
 		int listX = width / 2 - 180;
 		int listY = 42;
 		int rowH = 38;
-		if(mx >= listX && mx < width / 2 + 180 && my >= listY && my < height - 36) {
+		if(mx >= listX && mx < width / 2 + 180 && my >= listY && my < height - 72) {
 			int idx = (my - listY) / rowH;
 			if(idx >= 0 && idx < mods.size()) {
 				selected = idx;
@@ -115,7 +126,7 @@ public class GuiEaglModList extends GuiScreen {
 		int x1 = width / 2 - 180;
 		int x2 = width / 2 + 180;
 		int y = 42;
-		for(int i = 0; i < mods.size() && y + 34 < height - 34; ++i, y += 38) {
+		for(int i = 0; i < mods.size() && y + 34 < height - 72; ++i, y += 38) {
 			EaglModPackage p = mods.get(i);
 			int bg = i == selected ? 0xAA555555 : 0x88000000;
 			drawRect(x1, y, x2, y + 34, bg);
@@ -129,7 +140,7 @@ public class GuiEaglModList extends GuiScreen {
 					p.manifest.enabled ? 0x55FF55 : 0xAAAAAA);
 		}
 		if(mods.isEmpty()) drawCenteredString(fontRendererObj, "No mods yet  import one or open Mod Builder", width / 2, height / 2, 0xAAAAAA);
-		if(status.length() > 0) drawCenteredString(fontRendererObj, status, width / 2, height - 40, 0xCCCCCC);
+		if(status.length() > 0) drawCenteredString(fontRendererObj, status, width / 2, height - 66, 0xCCCCCC);
 		super.drawScreen(mx, my, partialTicks);
 	}
 }
