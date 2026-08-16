@@ -12,19 +12,18 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 
-/**
- * Eaglermod's in-client visual editor. It intentionally looks like Minecraft,
- * but behaves like a Scratch workspace: palette on the left and connected
- * action/event blocks on the canvas.
- */
+/** Minecraft-native Scratch-style editor for Eaglermod packages. */
 public class GuiEaglModBuilder extends GuiScreen {
 	private static final int TAB_CODE = 0;
 	private static final int TAB_ASSETS = 1;
 	private static final int TAB_INFO = 2;
+	private static final int PALETTE_CORE = 0;
+	private static final int PALETTE_EFFECTS = 1;
 
 	private final GuiScreen back;
 	private final EaglModProject project = new EaglModProject();
 	private int tab = TAB_CODE;
+	private int palettePage = PALETTE_CORE;
 	private int selectedBlock = -1;
 	private String status = "New project";
 	private String pendingAssetFolder = null;
@@ -58,10 +57,10 @@ public class GuiEaglModBuilder extends GuiScreen {
 		buttonList.add(new GuiButton(5, width - 164, height - 26, 76, 20, "Build"));
 
 		nameField = field(project.manifest.name, 80);
-		idField = field(project.manifest.id, 50);
-		authorField = field(project.manifest.author, 110);
-		versionField = field(project.manifest.version, 140);
-		descField = field(project.manifest.description, 170);
+		idField = field(project.manifest.id, 110);
+		authorField = field(project.manifest.author, 140);
+		versionField = field(project.manifest.version, 170);
+		descField = field(project.manifest.description, 200);
 		valueField = field("", height - 52);
 		refreshTabButtons();
 	}
@@ -108,15 +107,24 @@ public class GuiEaglModBuilder extends GuiScreen {
 			case 0:
 				mc.displayGuiScreen(back);
 				break;
-			case 1: tab = TAB_CODE; refreshTabButtons(); break;
-			case 2: tab = TAB_ASSETS; refreshTabButtons(); break;
-			case 3: tab = TAB_INFO; refreshTabButtons(); break;
+			case 1:
+				tab = TAB_CODE;
+				refreshTabButtons();
+				break;
+			case 2:
+				tab = TAB_ASSETS;
+				refreshTabButtons();
+				break;
+			case 3:
+				tab = TAB_INFO;
+				refreshTabButtons();
+				break;
 			case 4:
 				syncInfo();
 				EaglModRegistry.install(project.build());
 				EaglModRuntime.reload();
-				EaglModRuntime.fire("test");
-				status = "Test mod loaded  fired TEST event";
+				EaglModRuntime.fireMod(project.manifest.id, "test");
+				status = "Test mod loaded - fired TEST event";
 				break;
 			case 5:
 				syncInfo();
@@ -126,7 +134,8 @@ public class GuiEaglModBuilder extends GuiScreen {
 				EaglModRegistry.export(pkg);
 				status = "Built + installed " + pkg.manifest.id + ".eaglmod";
 				break;
-			default: break;
+			default:
+				break;
 			}
 		}catch(Throwable t) {
 			status = "Builder error: " + t.getMessage();
@@ -171,6 +180,13 @@ public class GuiEaglModBuilder extends GuiScreen {
 			return;
 		}
 		if(tab == TAB_CODE && button == 0) {
+			if(in(mx, my, 10, 50, 86, 67)) {
+				palettePage = PALETTE_CORE;
+				return;
+			}else if(in(mx, my, 87, 50, 164, 67)) {
+				palettePage = PALETTE_EFFECTS;
+				return;
+			}
 			String op = paletteOpcode(mx, my);
 			if(op != null) {
 				String def = defaultValue(op);
@@ -197,7 +213,10 @@ public class GuiEaglModBuilder extends GuiScreen {
 		if(project.blocks.size() <= 1 || added.opcode.startsWith("event_")) return;
 		for(int i = project.blocks.size() - 2; i >= 0; --i) {
 			EaglBlock b = project.blocks.get(i);
-			if(b.next == -1) { b.next = added.id; return; }
+			if(b.next == -1) {
+				b.next = added.id;
+				return;
+			}
 		}
 	}
 
@@ -209,17 +228,30 @@ public class GuiEaglModBuilder extends GuiScreen {
 
 	private String paletteOpcode(int mx, int my) {
 		if(mx < 10 || mx > 164) return null;
-		int row = (my - 52) / 30;
-		if(my < 52 || row < 0) return null;
-		switch(row) {
-		case 0: return "event_test";
-		case 1: return "event_tick";
-		case 2: return "chat";
-		case 3: return "title";
-		case 4: return "command";
-		case 5: return "set_fov";
-		case 6: return "set_gamma";
-		default: return null;
+		int row = (my - 72) / 30;
+		if(my < 72 || row < 0 || row > 6) return null;
+		if(palettePage == PALETTE_CORE) {
+			switch(row) {
+			case 0: return "event_test";
+			case 1: return "event_reset";
+			case 2: return "event_tick";
+			case 3: return "chat";
+			case 4: return "title";
+			case 5: return "command";
+			case 6: return "set_fov";
+			default: return null;
+			}
+		}else {
+			switch(row) {
+			case 0: return "set_gamma";
+			case 1: return "set_camera";
+			case 2: return "set_bobbing";
+			case 3: return "set_time";
+			case 4: return "set_rain";
+			case 5: return "set_thunder";
+			case 6: return "play_sound";
+			default: return null;
+			}
 		}
 	}
 
@@ -229,6 +261,11 @@ public class GuiEaglModBuilder extends GuiScreen {
 		if("command".equals(op)) return "help";
 		if("set_fov".equals(op)) return "70";
 		if("set_gamma".equals(op)) return "1.0";
+		if("set_camera".equals(op)) return "1";
+		if("set_bobbing".equals(op)) return "true";
+		if("set_time".equals(op)) return "18000";
+		if("set_rain".equals(op) || "set_thunder".equals(op)) return "1.0";
+		if("play_sound".equals(op)) return "ambient.cave.cave6";
 		return "";
 	}
 
@@ -244,7 +281,7 @@ public class GuiEaglModBuilder extends GuiScreen {
 		drawDefaultBackground();
 		drawCenteredString(fontRendererObj, "Eaglermod Mod Builder", width / 2, 12, 0xFFFFFF);
 		if(tab == TAB_CODE) drawCode(mx, my);
-		else if(tab == TAB_ASSETS) drawAssets(mx, my);
+		else if(tab == TAB_ASSETS) drawAssets();
 		else drawInfo();
 		drawString(fontRendererObj, status, 7, height - 39, 0xAAAAAA);
 		super.drawScreen(mx, my, partialTicks);
@@ -253,9 +290,19 @@ public class GuiEaglModBuilder extends GuiScreen {
 	private void drawCode(int mx, int my) {
 		drawRect(7, 34, 168, height - 58, 0xAA111111);
 		drawString(fontRendererObj, "BLOCKS", 14, 40, 0xAAAAAA);
-		String[] labels = { "when TEST", "when TICK", "say [text]", "show title [text]", "run command [cmd]", "set FOV [70]", "set gamma [1.0]" };
-		int[] colors = { 0xFFCC9900, 0xFFCC9900, 0xFF4466CC, 0xFF4466CC, 0xFF8855BB, 0xFF44AA66, 0xFF44AA66 };
-		for(int i = 0; i < labels.length; ++i) drawPuzzleBlock(10, 52 + i * 30, 154, labels[i], colors[i], false);
+		drawPaletteTab(10, 50, 86, "CORE", palettePage == PALETTE_CORE);
+		drawPaletteTab(87, 50, 164, "EFFECTS", palettePage == PALETTE_EFFECTS);
+
+		String[] labels;
+		int[] colors;
+		if(palettePage == PALETTE_CORE) {
+			labels = new String[] { "when TEST", "when RESET", "when TICK", "say [text]", "show title [text]", "run command [cmd]", "set FOV [70]" };
+			colors = new int[] { 0xFFCC9900, 0xFFCC9900, 0xFFCC9900, 0xFF4466CC, 0xFF4466CC, 0xFF8855BB, 0xFF44AA66 };
+		}else {
+			labels = new String[] { "set gamma [1]", "camera [0-2]", "view bobbing [true]", "world time [18000]", "rain [0-1]", "thunder [0-1]", "play sound [id]" };
+			colors = new int[] { 0xFF44AA66, 0xFF44AA66, 0xFF44AA66, 0xFF3388AA, 0xFF3388AA, 0xFF3388AA, 0xFFAA5577 };
+		}
+		for(int i = 0; i < labels.length; ++i) drawPuzzleBlock(10, 72 + i * 30, 154, labels[i], colors[i], false);
 
 		drawRect(174, 34, width - 7, height - 58, 0x66000000);
 		drawString(fontRendererObj, "WORKSPACE", 181, 40, 0x888888);
@@ -269,6 +316,11 @@ public class GuiEaglModBuilder extends GuiScreen {
 			drawString(fontRendererObj, "Block value", width / 2 - 110, height - 63, 0xAAAAAA);
 			valueField.drawTextBox();
 		}
+	}
+
+	private void drawPaletteTab(int x1, int y1, int x2, String label, boolean active) {
+		drawRect(x1, y1, x2, y1 + 17, active ? 0xFF555555 : 0xFF222222);
+		drawCenteredString(fontRendererObj, label, (x1 + x2) / 2, y1 + 5, active ? 0xFFFFFF : 0x999999);
 	}
 
 	/** Pixel/blocky Scratch notch while still using vanilla Minecraft rendering. */
@@ -288,7 +340,7 @@ public class GuiEaglModBuilder extends GuiScreen {
 		return s.length() <= len ? s : s.substring(0, len - 3) + "...";
 	}
 
-	private void drawAssets(int mx, int my) {
+	private void drawAssets() {
 		drawCenteredString(fontRendererObj, "Assets are packed directly inside the .eaglmod", width / 2, 42, 0xAAAAAA);
 		assetButton(18, 62, "Import Image  PNG", 0xFF5577AA);
 		assetButton(18, 90, "Import Sound  OGG", 0xFF7755AA);
