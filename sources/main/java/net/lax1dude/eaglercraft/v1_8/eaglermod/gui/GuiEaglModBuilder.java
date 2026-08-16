@@ -1,7 +1,5 @@
 package net.lax1dude.eaglercraft.v1_8.eaglermod.gui;
 
-import java.io.IOException;
-
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.Keyboard;
 import net.lax1dude.eaglercraft.v1_8.eaglermod.EaglModPackage;
@@ -143,7 +141,7 @@ public class GuiEaglModBuilder extends GuiScreen {
 		project.manifest.description = descField.getText().trim();
 	}
 
-	protected void keyTyped(char c, int key) throws IOException {
+	protected void keyTyped(char c, int key) {
 		if(tab == TAB_INFO) {
 			if(nameField.textboxKeyTyped(c, key) || idField.textboxKeyTyped(c, key) || authorField.textboxKeyTyped(c, key)
 					|| versionField.textboxKeyTyped(c, key) || descField.textboxKeyTyped(c, key)) return;
@@ -155,7 +153,7 @@ public class GuiEaglModBuilder extends GuiScreen {
 		super.keyTyped(c, key);
 	}
 
-	protected void mouseClicked(int mx, int my, int button) throws IOException {
+	protected void mouseClicked(int mx, int my, int button) {
 		super.mouseClicked(mx, my, button);
 		if(tab == TAB_INFO) {
 			nameField.mouseClicked(mx, my, button);
