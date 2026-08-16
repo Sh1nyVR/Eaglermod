@@ -51,6 +51,18 @@ public class EaglModRuntime {
 		for(int i = 0; i < graphs.size(); ++i) executeEvent(graphs.get(i), event);
 	}
 
+	/** Fire an event only for one installed/enabled mod. Used by the Mods screen tester. */
+	public static void fireMod(String modId, String event) {
+		if(graphs.isEmpty()) reload();
+		for(int i = 0; i < graphs.size(); ++i) {
+			LoadedGraph g = graphs.get(i);
+			if(g.pkg.manifest.id.equals(modId)) {
+				executeEvent(g, event);
+				return;
+			}
+		}
+	}
+
 	private static void executeEvent(LoadedGraph g, String event) {
 		for(int i = 0; i < g.blocks.size(); ++i) {
 			EaglBlock b = g.blocks.get(i);
@@ -73,6 +85,21 @@ public class EaglModRuntime {
 			try { mc.gameSettings.fovSetting = Float.parseFloat(b.value); } catch(Throwable t) { }
 		}else if("set_gamma".equals(b.opcode)) {
 			try { mc.gameSettings.gammaSetting = Float.parseFloat(b.value); } catch(Throwable t) { }
+		}else if("set_camera".equals(b.opcode)) {
+			try {
+				int camera = Integer.parseInt(b.value);
+				mc.gameSettings.thirdPersonView = camera < 0 ? 0 : (camera > 2 ? 2 : camera);
+			} catch(Throwable t) { }
+		}else if("set_bobbing".equals(b.opcode)) {
+			mc.gameSettings.viewBobbing = Boolean.parseBoolean(b.value);
+		}else if("set_time".equals(b.opcode)) {
+			try { if(mc.theWorld != null) mc.theWorld.setWorldTime(Long.parseLong(b.value)); } catch(Throwable t) { }
+		}else if("set_rain".equals(b.opcode)) {
+			try { if(mc.theWorld != null) mc.theWorld.setRainStrength(Float.parseFloat(b.value)); } catch(Throwable t) { }
+		}else if("set_thunder".equals(b.opcode)) {
+			try { if(mc.theWorld != null) mc.theWorld.setThunderStrength(Float.parseFloat(b.value)); } catch(Throwable t) { }
+		}else if("play_sound".equals(b.opcode)) {
+			if(mc.thePlayer != null && b.value.length() > 0) mc.thePlayer.playSound(b.value, 1.0F, 1.0F);
 		}
 		runChain(g, b.next, depth + 1);
 	}
